@@ -127,7 +127,7 @@ export function ModalShareScreen({
       for (const source of applications) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
-            audio: shareAudio,
+            audio: false,
             video: {
               mandatory: {
                 chromeMediaSource: 'desktop',
@@ -154,7 +154,7 @@ export function ModalShareScreen({
       for (const source of screens) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
-            audio: shareAudio,
+            audio: false,
             video: {
               mandatory: {
                 chromeMediaSource: 'desktop',
@@ -179,7 +179,7 @@ export function ModalShareScreen({
     }
     if (open && tabNow === 'applications') setupAppStreams()
     else if (open && tabNow === 'screens') setupScreenStreams()
-  }, [applications, open, screens, tabNow, shareAudio])
+  }, [applications, open, screens, tabNow])
 
   return (
     <Dialog open={open}>
