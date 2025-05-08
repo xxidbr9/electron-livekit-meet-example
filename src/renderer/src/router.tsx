@@ -5,7 +5,8 @@ import {
   createRouter,
   Outlet
 } from '@tanstack/react-router'
-import { MainMenu, MenuSettings } from './components/common'
+import { MainMenu, MenuSettings, ConferenceLayout } from './components/common'
+import { z } from 'zod'
 // import z from 'zod'
 
 export const rootRoute = createRootRoute({
@@ -24,7 +25,16 @@ const settingsRoute = createRoute({
   component: MenuSettings
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, settingsRoute])
+const RoomRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/room/$roomId',
+  params: z.object({
+    roomId: z.string()
+  }),
+  component: ConferenceLayout
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, settingsRoute, RoomRoute])
 
 const hashHistory = createHashHistory()
 export const router = createRouter({ routeTree, history: hashHistory })

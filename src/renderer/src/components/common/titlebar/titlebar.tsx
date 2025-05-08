@@ -1,15 +1,4 @@
 import { X, Minus } from '@phosphor-icons/react'
-import { ipcRenderer } from 'electron/renderer'
-
-declare global {
-  interface Window {
-    electron: {
-      send: (channel: string, data?: unknown) => void
-      receive: (channel: string, func: (...args: unknown[]) => void) => void
-    }
-    ipcRenderer: typeof ipcRenderer
-  }
-}
 
 type TitlebarProps = {
   onClose?: () => void

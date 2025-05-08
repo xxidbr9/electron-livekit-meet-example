@@ -39,7 +39,7 @@ export const initLivekitHealthCheck = (setLoading?: (arg: boolean) => void) => {
       clearInterval(pingInterval)
     }
 
-    currentServerUrl = 'http://' + currentServerUrl
+    currentServerUrl = 'http://' + currentServerUrl + "/health"
     // Initial check
 
     isHealthy = await pingServer(currentServerUrl)

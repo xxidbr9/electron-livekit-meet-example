@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Clipboard, Copy, ArrowClockwise, Gear, SpinnerGap, Check, Skull } from '@phosphor-icons/react'
+import {
+  Clipboard,
+  Copy,
+  ArrowClockwise,
+  Gear,
+  SpinnerGap,
+  Check,
+  Skull
+} from '@phosphor-icons/react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import { Button } from '@renderer/components/ui/button'
@@ -88,6 +96,19 @@ export function MainMenu() {
       setIsCheckLoading(false)
     }
   }, [serverHealth.isHealthy])
+
+  const handleGoToMeeting = () => {
+    console.log('Go to meeting:', meetingCode)
+    type ParamsType = {
+      roomId: string
+      roomName: string
+    }
+    const params: ParamsType = {
+      roomId: meetingCode,
+      roomName: meetingCode
+    }
+    window.electron.send('show-conference-window', params)
+  }
   return (
     <>
       <Titlebar title="Electron Livekit" onClose={onCloseWindows} onMinimize={onMinimizeWindows} />
@@ -181,12 +202,7 @@ export function MainMenu() {
           </Tabs>
         </CardContent>
         <CardFooter>
-          <Button
-            className="w-full cursor-pointer"
-            onClick={() =>
-              console.log('Join or create meeting with code:', meetingCode || createCode)
-            }
-          >
+          <Button className="w-full cursor-pointer" onClick={handleGoToMeeting}>
             {activeTab === 'join' ? 'Join Meeting' : 'Create Meeting'}
           </Button>
         </CardFooter>

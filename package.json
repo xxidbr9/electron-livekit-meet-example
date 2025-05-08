@@ -39,6 +39,7 @@
     "@tanstack/react-router": "^1.120.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "electron-util": "^0.18.1",
     "livekit-client": "^2.11.4",
     "lucide-react": "^0.508.0",
     "pnpm": "^10.10.0",

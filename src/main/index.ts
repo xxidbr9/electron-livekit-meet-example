@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, desktopCapturer, systemPreferences } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { openSystemPreferences } from 'electron-util'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -69,6 +70,39 @@ function createSettingMainWindow(): void {
   }
 }
 
+let conferenceWindow: BrowserWindow | null = null
+type CreateConferenceWindowParams = {
+  roomId: string
+  roomName: string
+}
+
+function createConferenceWindow({ roomId, roomName }: CreateConferenceWindowParams): void {
+  // Create the browser window.
+  conferenceWindow = new BrowserWindow({
+    title: `${roomName} | Meeting`,
+    // Fullscreen: true,
+    fullscreen: true,
+    show: false,
+    titleBarStyle: 'hidden',
+    resizable: false,
+    ...(process.platform === 'linux' ? { icon } : {}),
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  conferenceWindow.on('ready-to-show', () => {
+    conferenceWindow?.show()
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    conferenceWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + `#/room/${roomId}`)
+  } else {
+    conferenceWindow.loadFile(join(__dirname, '../renderer/index.html' + `#/room/${roomId}`))
+  }
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -101,7 +135,6 @@ app.whenReady().then(() => {
   })
 
   ipcMain.on('minimize-app', () => {
-    console.log('minimize-app')
     mainWindow?.minimize()
   })
 
@@ -109,7 +142,6 @@ app.whenReady().then(() => {
   ipcMain.on('show-setting-window', () => {
     if (settingWindow) {
       settingWindow.show()
-      return
     } else {
       createSettingMainWindow()
     }
@@ -118,6 +150,76 @@ app.whenReady().then(() => {
   ipcMain.on('close-setting-window', () => {
     settingWindow?.close()
     settingWindow = null
+  })
+
+  ipcMain.handle('electronMain:openScreenSecurity', () =>
+    openSystemPreferences('security', 'Privacy_ScreenCapture')
+  )
+  ipcMain.handle('electronMain:openCameraSecurity', () =>
+    openSystemPreferences('security', 'Privacy_Camera')
+  )
+  ipcMain.handle('electronMain:openMicrophoneSecurity', () =>
+    openSystemPreferences('security', 'Privacy_Microphone')
+  )
+
+  ipcMain.handle(
+    'electronMain:getScreenAccess',
+    () => systemPreferences.getMediaAccessStatus('screen') === 'granted'
+  )
+  ipcMain.handle(
+    'electronMain:getCameraAccess',
+    () => systemPreferences.getMediaAccessStatus('camera') === 'granted'
+  )
+  ipcMain.handle(
+    'electronMain:getMicrophoneAccess',
+    () => systemPreferences.getMediaAccessStatus('microphone') === 'granted'
+  )
+  ipcMain.handle('electronMain:screen:getSources', async () => {
+    const sources = await desktopCapturer.getSources({
+      types: ['window', 'screen'],
+      fetchWindowIcons: false,
+      thumbnailSize: {
+        width: 854,
+        height: 480
+      }
+    })
+    return sources
+      .map((source) => {
+        return {
+          id: source.id,
+          name: source.name,
+          thumbnail: source.thumbnail.toDataURL(), // convert image for transfer
+          appIcon: source.appIcon ? source.appIcon.toDataURL() : null
+        }
+      })
+      .filter((sources) => sources.thumbnail !== 'data:image/png;base64,')
+  })
+  // ipc render show conference window
+  ipcMain.on('show-conference-window', (_, params: CreateConferenceWindowParams) => {
+    // TODO: split this as function
+    mainWindow?.close()
+    mainWindow = null
+    if (conferenceWindow) {
+      conferenceWindow.show()
+    } else {
+      params.roomId = params.roomId || 'globals'
+      console.log(params)
+      createConferenceWindow({
+        roomId: params.roomId,
+        roomName: params.roomName
+      })
+    }
+  })
+
+  // ipc render close conference window
+  ipcMain.on('close-conference-window', () => {
+    conferenceWindow?.close()
+    conferenceWindow = null
+    createMainWindow()
+  })
+
+  ipcMain.on('minimize-conference-window', () => {
+    conferenceWindow?.minimize()
   })
 })
 
