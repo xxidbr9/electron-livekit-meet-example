@@ -3,12 +3,18 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
-function createWindow(): void {
+let mainWindow: BrowserWindow | null = null
+
+function createMainWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+  mainWindow = new BrowserWindow({
+    title: 'Electron Livekit',
+    width: 420,
+    height: 382,
     show: false,
+    titleBarStyle: 'hidden',
+    // resizable: false,
+    // frame: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -18,7 +24,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -32,6 +38,34 @@ function createWindow(): void {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+}
+
+let settingWindow: BrowserWindow | null = null
+function createSettingMainWindow(): void {
+  // Create the browser window.
+  settingWindow = new BrowserWindow({
+    title: 'Server Setting',
+    width: 580,
+    height: 232,
+    show: false,
+    titleBarStyle: 'hidden',
+    // resizable: false,
+    ...(process.platform === 'linux' ? { icon } : {}),
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  settingWindow.on('ready-to-show', () => {
+    settingWindow?.show()
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    settingWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '#/settings')
+  } else {
+    settingWindow.loadFile(join(__dirname, '../renderer/index.html' + '#/settings'))
   }
 }
 
@@ -52,12 +86,38 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  createWindow()
+  createMainWindow()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+  })
+
+  ipcMain.on('close-app', () => {
+    mainWindow?.close()
+    mainWindow = null
+    app.quit()
+  })
+
+  ipcMain.on('minimize-app', () => {
+    console.log('minimize-app')
+    mainWindow?.minimize()
+  })
+
+  // ipc render show setting window
+  ipcMain.on('show-setting-window', () => {
+    if (settingWindow) {
+      settingWindow.show()
+      return
+    } else {
+      createSettingMainWindow()
+    }
+  })
+  // ipc render close setting window
+  ipcMain.on('close-setting-window', () => {
+    settingWindow?.close()
+    settingWindow = null
   })
 })
 
@@ -69,6 +129,5 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
