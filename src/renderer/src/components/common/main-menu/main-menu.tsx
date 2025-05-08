@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Clipboard, Copy, ArrowClockwise, Gear } from '@phosphor-icons/react'
+import { useEffect, useState } from 'react'
+import { Clipboard, Copy, ArrowClockwise, Gear, SpinnerGap, Check, Skull } from '@phosphor-icons/react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import { Button } from '@renderer/components/ui/button'
@@ -15,6 +15,7 @@ import {
 } from '@renderer/components/ui/card'
 import { useLocalStorage } from '@renderer/hooks'
 import { Titlebar } from '../titlebar'
+import { initLivekitHealthCheck } from '@renderer/network'
 
 export function MainMenu() {
   const [activeTab, setActiveTab] = useState('join')
@@ -60,6 +61,31 @@ export function MainMenu() {
     window.electron.send('minimize-app')
   }
 
+  const [serverHealth, setServerHealth] = useState({ isHealthy: false, serverUrl: '' })
+  const [isCheckLoading, setIsCheckLoading] = useState(false)
+
+  useEffect(() => {
+    const livekitHealth = initLivekitHealthCheck()
+    setIsCheckLoading(true)
+    // Get initial health status
+    setServerHealth(livekitHealth.getHealth())
+
+    // Set up interval to check health periodically in the component
+    const healthCheckInterval = setInterval(() => {
+      setServerHealth(livekitHealth.getHealth())
+    }, 1000) // Update UI every 1 seconds
+
+    // Clean up interval when component unmounts
+    return () => {
+      clearInterval(healthCheckInterval)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (serverHealth.isHealthy) {
+      setIsCheckLoading(false)
+    }
+  }, [serverHealth.isHealthy])
   return (
     <>
       <Titlebar title="Electron Livekit" onClose={onCloseWindows} onMinimize={onMinimizeWindows} />
@@ -73,8 +99,22 @@ export function MainMenu() {
           </div>
           <CardTitle className="text-2xl font-bold">Meeting App</CardTitle>
           <CardDescription>Join or create a meeting</CardDescription>
-          <CardDescription className="text-xs mt-1 text-muted-foreground">
-            Connected to: <span className="underline">{serverUrl}</span>
+          <CardDescription className="text-xs mt-1 text-muted-foreground flex items-center justify-center">
+            <div className="flex items-center gap-x-1">
+              <span>Connected to:</span>
+              <div className="flex items-center gap-x-0.5">
+                <span className="underline">{serverUrl}</span>
+                <span>
+                  {isCheckLoading ? (
+                    <SpinnerGap className="animate-spin" />
+                  ) : serverHealth.isHealthy ? (
+                    <Check />
+                  ) : (
+                    <Skull />
+                  )}
+                </span>
+              </div>
+            </div>
           </CardDescription>
         </CardHeader>
         <CardContent>
