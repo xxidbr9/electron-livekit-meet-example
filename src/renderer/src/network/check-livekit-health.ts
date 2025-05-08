@@ -21,7 +21,7 @@ const pingServer = async (url: string): Promise<boolean> => {
  * Initialize LiveKit health check and return health status
  * @returns Object containing server health status and URL
  */
-export const initLivekitHealthCheck = () => {
+export const initLivekitHealthCheck = (setLoading?: (arg: boolean) => void) => {
   // Get server URL from localStorage and parse it if it's JSON
   const storedUrl = localStorage.getItem('serverUrl')
   try {
@@ -33,18 +33,21 @@ export const initLivekitHealthCheck = () => {
   }
 
   const startHealthCheck = async () => {
+    setLoading?.(true)
     // Clear existing interval if any
     if (pingInterval) {
       clearInterval(pingInterval)
     }
+
     currentServerUrl = 'http://' + currentServerUrl
     // Initial check
+
     isHealthy = await pingServer(currentServerUrl)
 
     // Set up periodic checking
-    pingInterval = setInterval(async () => {
-      isHealthy = await pingServer(currentServerUrl)
-    }, 30000) // Check every 30 seconds
+    // pingInterval = setInterval(async () => {
+    //   isHealthy = await pingServer(currentServerUrl)
+    // }, 10000) // Check every 10 seconds
   }
 
   // Watch for localStorage changes

@@ -13,7 +13,7 @@ function createMainWindow(): void {
     height: 382,
     show: false,
     titleBarStyle: 'hidden',
-    // resizable: false,
+    resizable: false,
     // frame: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -50,7 +50,7 @@ function createSettingMainWindow(): void {
     height: 232,
     show: false,
     titleBarStyle: 'hidden',
-    // resizable: false,
+    resizable: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

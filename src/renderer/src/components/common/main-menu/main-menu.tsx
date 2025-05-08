@@ -65,8 +65,7 @@ export function MainMenu() {
   const [isCheckLoading, setIsCheckLoading] = useState(false)
 
   useEffect(() => {
-    const livekitHealth = initLivekitHealthCheck()
-    setIsCheckLoading(true)
+    const livekitHealth = initLivekitHealthCheck(setIsCheckLoading)
     // Get initial health status
     setServerHealth(livekitHealth.getHealth())
 
@@ -81,8 +80,11 @@ export function MainMenu() {
     }
   }, [])
 
+  // TODO: change this to properly check loading status
   useEffect(() => {
     if (serverHealth.isHealthy) {
+      setIsCheckLoading(false)
+    } else {
       setIsCheckLoading(false)
     }
   }, [serverHealth.isHealthy])
@@ -99,9 +101,9 @@ export function MainMenu() {
           </div>
           <CardTitle className="text-2xl font-bold">Meeting App</CardTitle>
           <CardDescription>Join or create a meeting</CardDescription>
-          <CardDescription className="text-xs mt-1 text-muted-foreground flex items-center justify-center">
+          <CardDescription className="text-xs text-muted-foreground flex items-center justify-center">
             <div className="flex items-center gap-x-1">
-              <span>Connected to:</span>
+              <span>Connected to server:</span>
               <div className="flex items-center gap-x-0.5">
                 <span className="underline">{serverUrl}</span>
                 <span>
@@ -125,7 +127,9 @@ export function MainMenu() {
             </TabsList>
             <TabsContent value="join" className="mt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="meeting-code">Meeting Code</Label>
+                <Label htmlFor="meeting-code" className="h-4">
+                  Meeting Code
+                </Label>
                 <div className="flex space-x-2">
                   <Input
                     id="meeting-code"
@@ -146,11 +150,11 @@ export function MainMenu() {
             </TabsContent>
             <TabsContent value="create" className="mt-6 space-y-4">
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between h-4">
                   <Label htmlFor="create-code">Meeting Code</Label>
                   <button
                     onClick={generateRandomCode}
-                    className="h-2 px-2 text-xs flex items-center cursor-pointer"
+                    className="px-2 text-xs flex items-center cursor-pointer text-right"
                   >
                     <ArrowClockwise className="mr-1 h-3 w-3" />
                     Generate
