@@ -1,0 +1,3 @@
+[submodule "server-app-submodule"]
+	path = server-app-submodule
+	url = https://github.com/xxidbr9/livekit-server-for-electron
