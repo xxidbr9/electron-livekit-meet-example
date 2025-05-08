@@ -14,7 +14,8 @@ import { Switch } from '@renderer/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import { Label } from '@renderer/components/ui/label'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import placeholderImage from '@/assets/images/screen_placeholder.svg'
 
 const isPathLike = (name: string) => {
   // A simple check for Windows-style file paths
@@ -47,6 +48,7 @@ export function ModalShareScreen({
 }: ModalShareScreenProps) {
   const [applications, setApplications] = useState<DesktopSourceDTO[]>([])
   const [screens, setScreens] = useState<DesktopSourceDTO[]>([])
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
   const getDisplayMedia = () => {
     // eslint-disable-next-line no-async-promise-executor
@@ -102,45 +104,82 @@ export function ModalShareScreen({
     })
   }
 
+  const getCapturerDevice = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices()
+
+    const videoDevices = devices.filter((d) => d.kind === 'videoinput')
+    setDevices(videoDevices)
+  }
   useEffect(() => {
     getDisplayMedia()
+    getCapturerDevice()
   }, [])
 
-  // const applications = [
-  //   {
-  //     id: 'app1',
-  //     name: 'Arc picture in picture',
-  //     thumbnail: '/placeholder.svg'
-  //   },
-  //   {
-  //     id: 'app2',
-  //     name: 'brain-storming | Beyond App',
-  //     thumbnail: '/placeholder.svg'
-  //   },
-  //   {
-  //     id: 'app3',
-  //     name: 'VS Code - Project',
-  //     thumbnail: '/placeholder.svg'
-  //   },
-  //   {
-  //     id: 'app4',
-  //     name: 'Terminal',
-  //     thumbnail: '/placeholder.svg'
-  //   }
-  // ]
+  const [tabNow, setTabNow] = useState<'applications' | 'screens' | 'capture' | string>(
+    'applications'
+  )
+  const videoAppRefs = useRef<Record<string, HTMLVideoElement | null>>({})
+  const videoScreenRefs = useRef<Record<string, HTMLVideoElement | null>>({})
 
-  // const screens = [
-  //   {
-  //     id: 'screen1',
-  //     name: 'Main Display',
-  //     thumbnail: '/placeholder.svg'
-  //   },
-  //   {
-  //     id: 'screen2',
-  //     name: 'Secondary Display',
-  //     thumbnail: '/placeholder.svg'
-  //   }
-  // ]
+
+  useEffect(() => {
+    const setupAppStreams = async () => {
+      for (const source of applications) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: shareAudio,
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: source.id,
+                maxWidth: 854,
+                maxHeight: 480
+              }
+            } as unknown as MediaTrackConstraints
+          })
+
+          const videoElement = videoAppRefs.current[source.id]
+          if (videoElement) {
+            videoElement.srcObject = stream
+            videoElement.onloadedmetadata = () => {
+              videoElement?.play()
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to get stream for ${source.name}`, err)
+        }
+      }
+    }
+    const setupScreenStreams = async () => {
+      for (const source of screens) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: shareAudio,
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: source.id,
+                maxWidth: 854,
+                maxHeight: 480
+              }
+            } as unknown as MediaTrackConstraints
+          })
+
+          const videoElement = videoScreenRefs.current[source.id]
+          if (videoElement) {
+            videoElement.srcObject = stream
+            videoElement.onloadedmetadata = () => {
+              videoElement?.play()
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to get stream for ${source.name}`, err)
+        }
+      }
+    }
+    if (open && tabNow === 'applications') setupAppStreams()
+    else if (open && tabNow === 'screens') setupScreenStreams()
+  }, [applications, open, screens, tabNow, shareAudio])
 
   return (
     <Dialog open={open}>
@@ -152,7 +191,12 @@ export function ModalShareScreen({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="applications" className="w-full">
+        <Tabs
+          value={tabNow}
+          defaultValue="applications"
+          className="w-full"
+          onValueChange={setTabNow}
+        >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="applications">Applications</TabsTrigger>
             <TabsTrigger value="screens">Screens</TabsTrigger>
@@ -160,6 +204,11 @@ export function ModalShareScreen({
           </TabsList>
 
           <TabsContent value="applications" className="mt-2">
+            {applications.length <= 0 && (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No Application found
+              </div>
+            )}
             <ScrollArea className="h-[300px]">
               <div className="grid grid-cols-2 gap-4 pr-4">
                 {applications.map(
@@ -168,16 +217,24 @@ export function ModalShareScreen({
                       <Card
                         key={app.id}
                         className={cn(
-                          'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0',
+                          'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0 rounded-md',
                           selectedItem === app.id && 'border-primary'
                         )}
                         onClick={() => onSelectedItem(app.id)}
                       >
                         <div className="relative">
-                          <img
+                          {/* <img
                             src={app.thumbnail}
                             alt={app.name}
                             className="w-full h-32 object-cover"
+                          /> */}
+                          <video
+                            ref={(el) =>
+                              (videoAppRefs.current[app.id] = el) as unknown as undefined
+                            }
+                            autoPlay
+                            muted
+                            className="w-full h-32 object-cover bg-black"
                           />
                           {selectedItem === app.id && (
                             <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
@@ -195,7 +252,12 @@ export function ModalShareScreen({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="screens" className="mt-4">
+          <TabsContent value="screens" className="mt-2">
+            {screens.length <= 0 && (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No Screen found
+              </div>
+            )}
             <ScrollArea className="h-[300px]">
               <div className="grid grid-cols-2 gap-4 pr-4">
                 {screens.map(
@@ -204,16 +266,24 @@ export function ModalShareScreen({
                       <Card
                         key={screen.id}
                         className={cn(
-                          'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0',
+                          'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0 rounded-md',
                           selectedItem === screen.id && 'border-primary'
                         )}
                         onClick={() => onSelectedItem(screen.id)}
                       >
                         <div className="relative">
-                          <img
+                          {/* <img
                             src={screen.thumbnail || '/placeholder.svg'}
                             alt={screen.name}
                             className="w-full h-32 object-cover rounded-t-lg"
+                          /> */}
+                          <video
+                            ref={(el) =>
+                              (videoScreenRefs.current[screen.id] = el) as unknown as undefined
+                            }
+                            autoPlay
+                            muted
+                            className="w-full h-32 object-cover bg-black"
                           />
                           {selectedItem === screen.id && (
                             <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
@@ -231,17 +301,49 @@ export function ModalShareScreen({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="capture" className="mt-4">
-            <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-              No capture devices found
-            </div>
+          <TabsContent value="capture" className="mt-2">
+            {devices.length <= 0 && (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No capture devices found
+              </div>
+            )}
+            <ScrollArea className="h-[300px]">
+              <div className="grid grid-cols-2 gap-4 pr-4">
+                {devices.map((device) => (
+                  <Card
+                    key={device.deviceId}
+                    className={cn(
+                      'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0 rounded-md',
+                      selectedItem === device.deviceId && 'border-primary'
+                    )}
+                    onClick={() => onSelectedItem(device.deviceId)}
+                  >
+                    <div className="relative">
+                      <img
+                        src={placeholderImage}
+                        alt={device.label}
+                        className="w-full h-32 object-cover rounded-t-lg"
+                      />
+                      {device.deviceId === selectedItem && (
+                        <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
+                          <Check className="h-4 w-4" />
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="p-3">
+                      <p className="text-sm truncate">{device.label}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
         </Tabs>
 
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="flex items-center space-x-2">
             <Switch id="share-audio" checked={shareAudio} onCheckedChange={setShareAudio} />
-            <Label htmlFor="share-audio">Share system audio</Label>
+            <Label htmlFor="share-audio">Share audio</Label>
           </div>
 
           <div className="flex space-x-2">

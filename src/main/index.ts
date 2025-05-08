@@ -107,6 +107,7 @@ function createConferenceWindow({ roomId, roomName }: CreateConferenceWindowPara
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  app.commandLine.appendSwitch('log-level', '3') // '3' = WARNING and above only
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -177,7 +178,7 @@ app.whenReady().then(() => {
   ipcMain.handle('electronMain:screen:getSources', async () => {
     const sources = await desktopCapturer.getSources({
       types: ['window', 'screen'],
-      fetchWindowIcons: false,
+      fetchWindowIcons: true,
       thumbnailSize: {
         width: 854,
         height: 480

@@ -31,7 +31,6 @@ export function MainMenu() {
   // const [meetingName, setMeetingName] = useState('')
   const [createCode, setCreateCode] = useState('')
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [serverUrl] = useLocalStorage('serverUrl', 'localhost:7880')
 
   const generateRandomCode = () => {
@@ -98,14 +97,13 @@ export function MainMenu() {
   }, [serverHealth.isHealthy])
 
   const handleGoToMeeting = () => {
-    console.log('Go to meeting:', meetingCode)
     type ParamsType = {
       roomId: string
       roomName: string
     }
     const params: ParamsType = {
-      roomId: meetingCode,
-      roomName: meetingCode
+      roomId: meetingCode || createCode,
+      roomName: meetingCode || createCode
     }
     window.electron.send('show-conference-window', params)
   }
