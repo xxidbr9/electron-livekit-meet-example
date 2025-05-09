@@ -30,7 +30,9 @@ if (process.contextIsolated) {
       },
       openScreenSecurity: () => ipcRenderer.invoke('electronMain:openScreenSecurity'),
       getScreenAccess: () => ipcRenderer.invoke('electronMain:getScreenAccess'),
-      getScreenSources: () => ipcRenderer.invoke('electronMain:screen:getSources')
+      getScreenSources: () => ipcRenderer.invoke('electronMain:screen:getSources'),
+      getLocalIP: () => ipcRenderer.invoke('electronMain:getLocalIP'),
+      scanForServerIP: () => ipcRenderer.invoke('electronMain:scanForServerIP')
     })
     contextBridge.exposeInMainWorld('ipcRenderer', ipcRenderer)
   } catch (error) {

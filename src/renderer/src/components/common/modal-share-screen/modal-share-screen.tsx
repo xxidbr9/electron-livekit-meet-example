@@ -121,7 +121,6 @@ export function ModalShareScreen({
   const videoAppRefs = useRef<Record<string, HTMLVideoElement | null>>({})
   const videoScreenRefs = useRef<Record<string, HTMLVideoElement | null>>({})
 
-
   useEffect(() => {
     const setupAppStreams = async () => {
       for (const source of applications) {

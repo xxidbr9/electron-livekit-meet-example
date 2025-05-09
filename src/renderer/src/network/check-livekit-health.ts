@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 let isHealthy: boolean = false
 let pingInterval: NodeJS.Timeout
-let currentServerUrl: string = ''
+let currentServerIP: string = ''
+let loading: boolean = true
 
 const pingServer = async (url: string): Promise<boolean> => {
   try {
@@ -10,9 +11,11 @@ const pingServer = async (url: string): Promise<boolean> => {
       method: 'HEAD',
       cache: 'no-cache'
     })
+    loading = false
     return response.ok
   } catch (error) {
     console.error('Failed to ping LiveKit server:', error)
+    loading = false
     return false
   }
 }
@@ -21,49 +24,44 @@ const pingServer = async (url: string): Promise<boolean> => {
  * Initialize LiveKit health check and return health status
  * @returns Object containing server health status and URL
  */
-export const initLivekitHealthCheck = (setLoading?: (arg: boolean) => void) => {
+export const initLivekitHealthCheck = () => {
   // Get server URL from localStorage and parse it if it's JSON
   const storedUrl = localStorage.getItem('serverUrl')
   try {
-    currentServerUrl = storedUrl ? JSON.parse(storedUrl) : ''
+    currentServerIP = storedUrl ? JSON.parse(storedUrl) : ''
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     // If parsing fails, use the raw value
-    currentServerUrl = storedUrl || ''
+    currentServerIP = storedUrl || ''
   }
 
   const startHealthCheck = async () => {
-    setLoading?.(true)
+    loading = true
     // Clear existing interval if any
     if (pingInterval) {
       clearInterval(pingInterval)
     }
 
-    currentServerUrl = 'http://' + currentServerUrl + "/health"
+    currentServerIP = `http://${currentServerIP}:8080/health`
     // Initial check
 
-    isHealthy = await pingServer(currentServerUrl)
-
-    // Set up periodic checking
-    // pingInterval = setInterval(async () => {
-    //   isHealthy = await pingServer(currentServerUrl)
-    // }, 10000) // Check every 10 seconds
+    isHealthy = await pingServer(currentServerIP)
   }
 
   // Watch for localStorage changes
   window.addEventListener('storage', (e: StorageEvent) => {
     if (e.key === 'serverUrl') {
       try {
-        currentServerUrl = e.newValue ? JSON.parse(e.newValue) : ''
+        currentServerIP = e.newValue ? JSON.parse(e.newValue) : ''
       } catch (e: any) {
-        currentServerUrl = e.newValue || ''
+        currentServerIP = e.newValue || ''
       }
       startHealthCheck()
     }
   })
 
   // Initial setup
-  if (currentServerUrl) {
+  if (currentServerIP) {
     startHealthCheck()
   }
 
@@ -71,12 +69,9 @@ export const initLivekitHealthCheck = (setLoading?: (arg: boolean) => void) => {
   return {
     getHealth: () => ({
       isHealthy,
-      serverUrl: currentServerUrl
+      serverUrl: currentServerIP,
+      loading
     })
   }
 }
 
-export const getLivekitHealth = () => ({
-  isHealthy,
-  serverUrl: currentServerUrl
-})

@@ -1,11 +1,12 @@
 import { app, shell, BrowserWindow, ipcMain, desktopCapturer, systemPreferences } from 'electron'
 import { join } from 'path'
+import os from 'os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { openSystemPreferences } from 'electron-util'
+import { fetch } from 'undici'
 
 let mainWindow: BrowserWindow | null = null
-
 function createMainWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -221,6 +222,60 @@ app.whenReady().then(() => {
 
   ipcMain.on('minimize-conference-window', () => {
     conferenceWindow?.minimize()
+  })
+
+  // get local ip
+  const scanLocalIP = () => {
+    const ifaces = os.networkInterfaces()
+    let ip = ''
+    for (const devName in ifaces) {
+      const iface = ifaces[devName]
+      if (!iface) {
+        continue
+      }
+      for (let i = 0; i < iface.length; i++) {
+        const alias = iface[i]
+        if (alias.family === 'IPv4' && alias.address !== '1IP_ADDRESS' && !alias.internal) {
+          ip = alias.address
+          return ip
+        }
+      }
+    }
+    return ip
+  }
+  ipcMain.handle('electronMain:getLocalIP', scanLocalIP)
+
+  ipcMain.handle('electronMain:scanForServerIP', async () => {
+    const ip = scanLocalIP()
+    const ipArray = ip.split('.')
+    const ipPrefix = ipArray.slice(0, 3).join('.')
+    const ipList: string[] = []
+    for (let i = 1; i < 255; i++) {
+      ipList.push(`${ipPrefix}.${i}`)
+    }
+
+    const ipListWithPort: string[] = ipList.map((ip) => `http://${ip}:8080/health`)
+
+    const fetchPromises = ipListWithPort.map(async (url) => {
+      try {
+        const response = await fetch(url) // add timeout if supported
+        if (response.ok) {
+          return url.replace('/health', '') // Only keep base IP:port
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        // Ignore failed fetch
+        return null
+      }
+      return null
+    })
+    const results = await Promise.all(fetchPromises.filter(Boolean))
+    const ipListWithPortAlive = results.filter(Boolean) as string[]
+
+    if (ipListWithPortAlive.length === 0) {
+      return null
+    }
+    return ipListWithPortAlive[0].replace('http://', '').replace(':8080', '')
   })
 })
 

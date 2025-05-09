@@ -1,9 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ModalShareScreen } from '../modal-share-screen'
 import { Titlebar } from '../titlebar'
-import { Button } from '@renderer/components/ui/button'
+import { useParams } from '@tanstack/react-router'
+import { ControlBar } from '../control-bar'
 
 const ConferenceLayout = () => {
+  const params = useParams({ from: '/room/$roomId' })
+  const meetingCode = params.roomId
+
+  useEffect(() => {
+    console.log(meetingCode)
+  }, [meetingCode])
   const onCloseWindows = () => {
     window.electron.send('close-conference-window')
   }
@@ -12,13 +19,24 @@ const ConferenceLayout = () => {
     window.electron.send('minimize-conference-window')
   }
 
+  const handleSettingClick = () => {
+    window.electron.send('show-setting-window')
+  }
+
   const [open, setOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
   const [shareAudio, setShareAudio] = useState(false)
 
   return (
-    <>
-      <Titlebar onClose={onCloseWindows} onMinimize={onMinimizeWindows} />
+    <div
+    // className="dark bg-background text-foreground"
+    >
+      <Titlebar
+        onClose={onCloseWindows}
+        onMinimize={onMinimizeWindows}
+        title
+        subTitle={meetingCode}
+      />
       <ModalShareScreen
         onClose={() => setOpen(false)}
         onSelectedItem={setSelectedItem}
@@ -27,11 +45,15 @@ const ConferenceLayout = () => {
         setShareAudio={setShareAudio}
         shareAudio={shareAudio}
       />
-      <div>
-        Conference Layout
-        <Button onClick={() => setOpen(true)}>Share Screen</Button>
+      <div className="h-[calc(100vh_-_2.5rem)]">
+        <ControlBar
+          totalOnline={4}
+          onExit={onCloseWindows}
+          onShareScreenClick={() => setOpen(true)}
+          onSettingClick={handleSettingClick}
+        />
       </div>
-    </>
+    </div>
   )
 }
 

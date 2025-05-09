@@ -46,14 +46,15 @@ export function MainMenu() {
     setCreateCode(result)
   }
 
-  const handlePaste = () => {
+  const handlePaste = async () => {
     // Instead of programmatically accessing clipboard, prompt the user
-    alert('Please use Ctrl+V / Cmd+V to paste the meeting code into the input field')
+    const pastedText = await navigator.clipboard.readText()
+    setMeetingCode(pastedText)
   }
 
-  const handleCopyCode = () => {
-    // Instead of programmatically copying to clipboard, prompt the user
-    alert('Please use Ctrl+C / Cmd+C to copy the meeting code to your clipboard')
+  const handleCopyCode = async () => {
+    const textCopy = createCode
+    await navigator.clipboard.writeText(textCopy)
   }
 
   const handleSettingShow = () => {
@@ -68,11 +69,14 @@ export function MainMenu() {
     window.electron.send('minimize-app')
   }
 
-  const [serverHealth, setServerHealth] = useState({ isHealthy: false, serverUrl: '' })
-  const [isCheckLoading, setIsCheckLoading] = useState(false)
+  const [serverHealth, setServerHealth] = useState({
+    isHealthy: false,
+    serverUrl: '',
+    loading: true
+  })
 
   useEffect(() => {
-    const livekitHealth = initLivekitHealthCheck(setIsCheckLoading)
+    const livekitHealth = initLivekitHealthCheck()
     // Get initial health status
     setServerHealth(livekitHealth.getHealth())
 
@@ -80,21 +84,11 @@ export function MainMenu() {
     const healthCheckInterval = setInterval(() => {
       setServerHealth(livekitHealth.getHealth())
     }, 1000) // Update UI every 1 seconds
-
     // Clean up interval when component unmounts
     return () => {
       clearInterval(healthCheckInterval)
     }
   }, [])
-
-  // TODO: change this to properly check loading status
-  useEffect(() => {
-    if (serverHealth.isHealthy) {
-      setIsCheckLoading(false)
-    } else {
-      setIsCheckLoading(false)
-    }
-  }, [serverHealth.isHealthy])
 
   const handleGoToMeeting = () => {
     type ParamsType = {
@@ -109,7 +103,7 @@ export function MainMenu() {
   }
   return (
     <>
-      <Titlebar title="Electron Livekit" onClose={onCloseWindows} onMinimize={onMinimizeWindows} />
+      <Titlebar title onClose={onCloseWindows} onMinimize={onMinimizeWindows} />
       <Card className="w-full max-w border-0 shadow-none">
         <CardHeader className="text-center select-none">
           <div className="absolute right-6 top-16">
@@ -122,11 +116,11 @@ export function MainMenu() {
           <CardDescription>Join or create a meeting</CardDescription>
           <CardDescription className="text-xs text-muted-foreground flex items-center justify-center">
             <div className="flex items-center gap-x-1">
-              <span>Connected to server:</span>
+              <span>Connected to server IP:</span>
               <div className="flex items-center gap-x-0.5">
                 <span className="underline">{serverUrl}</span>
                 <span>
-                  {isCheckLoading ? (
+                  {serverHealth.loading ? (
                     <SpinnerGap className="animate-spin" />
                   ) : serverHealth.isHealthy ? (
                     <Check />
