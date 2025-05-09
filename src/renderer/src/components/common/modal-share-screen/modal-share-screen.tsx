@@ -165,7 +165,7 @@ export function ModalShareScreen({
 
   return (
     <Dialog open={open}>
-      <DialogContent className="sm:max-w-[600px]" onClose={onClose}>
+      <DialogContent className="sm:max-w-[600px] text-foreground dark" onClose={onClose}>
         <DialogHeader>
           <DialogTitle>Screen Share</DialogTitle>
           <DialogDescription>
