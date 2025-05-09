@@ -48,7 +48,6 @@ export function ExampleMeeting2(props: {
     room.localParticipant.enableCameraAndMicrophone().catch((error) => {
       console.error(error)
     })
-
   }, [room, props.liveKitUrl, props.token, connectOptions])
 
   const shareScreen = async () => {
