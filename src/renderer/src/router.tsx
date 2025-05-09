@@ -5,7 +5,7 @@ import {
   createRouter,
   Outlet
 } from '@tanstack/react-router'
-import { ExampleMeeting2, MainMenu, MenuSettings } from './components/common'
+import { ConferenceLayout, MainMenu, MenuSettings } from './components/common'
 import { z } from 'zod'
 // import z from 'zod'
 
@@ -31,14 +31,14 @@ const RoomRoute = createRoute({
   params: z.object({
     roomId: z.string()
   }),
-  // component: ConferenceLayout
-  component: () => (
-    <ExampleMeeting2
-      codec="h264"
-      liveKitUrl={import.meta.env.VITE_LIVEKIT_URL}
-      token={import.meta.env.VITE_LIVEKIT_TOKEN}
-    />
-  )
+  component: ConferenceLayout
+  // component: () => (
+  //   <ExampleMeeting2
+  //     codec="h264"
+  //     liveKitUrl={import.meta.env.VITE_LIVEKIT_URL}
+  //     token={import.meta.env.VITE_LIVEKIT_TOKEN}
+  //   />
+  // )
   // component: ExampleMeeting
 })
 
