@@ -11,12 +11,22 @@ import {
   type VideoCodec
 } from 'livekit-client'
 import { useEffect, useMemo } from 'react'
+import { STORAGE_SERVER_URL, STORAGE_TOKEN } from '@renderer/lib/constants'
+import { useLocalStorage } from '@renderer/hooks'
+import { LIVEKIT_PORT } from '@renderer/lib/config'
 
 export function ExampleMeeting2(props: {
-  liveKitUrl: string
-  token: string
+  // liveKitUrl: string
+  // token: string
   codec: VideoCodec | undefined
 }) {
+  const [serverIp] = useLocalStorage(STORAGE_SERVER_URL, 'localhost')
+  const [token] = useLocalStorage(STORAGE_TOKEN, '')
+
+  const liveKitUrl = useMemo(() => {
+    return `ws://${serverIp}:${LIVEKIT_PORT}`
+  }, [serverIp])
+
   const roomOptions = useMemo((): RoomOptions => {
     return {
       publishDefaults: {
@@ -42,13 +52,13 @@ export function ExampleMeeting2(props: {
   }, [props])
 
   useEffect(() => {
-    room.connect(props.liveKitUrl, props.token, connectOptions).catch((error) => {
+    room.connect(liveKitUrl, token, connectOptions).catch((error) => {
       console.error(error)
     })
     room.localParticipant.enableCameraAndMicrophone().catch((error) => {
       console.error(error)
     })
-  }, [room, props.liveKitUrl, props.token, connectOptions])
+  }, [room, liveKitUrl, token, connectOptions])
 
   const shareScreen = async () => {
     const has_access = await window.electron.getScreenAccess()

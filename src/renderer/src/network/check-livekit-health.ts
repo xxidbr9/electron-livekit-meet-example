@@ -1,4 +1,7 @@
 /* eslint-disable prettier/prettier */
+
+import { STORAGE_SERVER_URL } from "@renderer/lib/constants"
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 let isHealthy: boolean = false
 let pingInterval: NodeJS.Timeout
@@ -26,7 +29,7 @@ const pingServer = async (url: string): Promise<boolean> => {
  */
 export const initLivekitHealthCheck = () => {
   // Get server URL from localStorage and parse it if it's JSON
-  const storedUrl = localStorage.getItem('serverUrl')
+  const storedUrl = localStorage.getItem(STORAGE_SERVER_URL)
   try {
     currentServerIP = storedUrl ? JSON.parse(storedUrl) : ''
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

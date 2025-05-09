@@ -32,23 +32,23 @@ export type DesktopSourceDTO = {
 type ModalShareScreenProps = {
   open: boolean
   onClose: () => void
-  onSelectedItem: (item: string | null) => void
-  selectedItem: string | null
-  shareAudio: boolean
-  setShareAudio: (shareAudio: boolean) => void
+  // shareAudio: boolean
+  // setShareAudio: (shareAudio: boolean) => void
+  onStartShare: (id: string, share_audio: boolean) => void
 }
 
 export function ModalShareScreen({
   onClose,
   open,
-  onSelectedItem,
-  selectedItem,
-  setShareAudio,
-  shareAudio
+  // setShareAudio,
+  // shareAudio,
+  onStartShare
 }: ModalShareScreenProps) {
   const [applications, setApplications] = useState<DesktopSourceDTO[]>([])
   const [screens, setScreens] = useState<DesktopSourceDTO[]>([])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
+  const [tempSelectedItem, setTempSelectedItem] = useState<string | undefined>()
+  const [tempShareAudio, setTempShareAudio] = useState<boolean>(false)
 
   const getDisplayMedia = () => {
     // eslint-disable-next-line no-async-promise-executor
@@ -75,29 +75,6 @@ export function ModalShareScreen({
 
         setScreens(screens)
         setApplications(apps)
-
-        // screenPickerShow(sources, async (id) => {
-        //   try {
-        //     const source = sources.find(source => source.id === id);
-        //     if (!source) {
-        //       return reject('none');
-        //     }
-
-        //     const stream = await window.navigator.mediaDevices.getUserMedia({
-        //       audio: false,
-        //       video: {
-        //         mandatory: {
-        //           chromeMediaSource: 'desktop',
-        //           chromeMediaSourceId: source.id
-        //         }
-        //       }
-        //     });
-        //     resolve(stream);
-        //   }
-        //   catch (err) {
-        //     reject(err);
-        //   }
-        // }, {});
       } catch (err) {
         reject(err)
       }
@@ -131,8 +108,9 @@ export function ModalShareScreen({
               mandatory: {
                 chromeMediaSource: 'desktop',
                 chromeMediaSourceId: source.id,
-                maxWidth: 854,
-                maxHeight: 480
+                maxWidth: 3840,
+                maxHeight: 2160,
+                maxFrameRate: 60
               }
             } as unknown as MediaTrackConstraints
           })
@@ -158,8 +136,9 @@ export function ModalShareScreen({
               mandatory: {
                 chromeMediaSource: 'desktop',
                 chromeMediaSourceId: source.id,
-                maxWidth: 854,
-                maxHeight: 480
+                maxWidth: 3840,
+                maxHeight: 2160,
+                maxFrameRate: 60
               }
             } as unknown as MediaTrackConstraints
           })
@@ -178,6 +157,10 @@ export function ModalShareScreen({
     }
     if (open && tabNow === 'applications') setupAppStreams()
     else if (open && tabNow === 'screens') setupScreenStreams()
+    return () => {
+      videoAppRefs.current = {}
+      videoScreenRefs.current = {}
+    }
   }, [applications, open, screens, tabNow])
 
   return (
@@ -217,9 +200,9 @@ export function ModalShareScreen({
                         key={app.id}
                         className={cn(
                           'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0 rounded-md',
-                          selectedItem === app.id && 'border-primary'
+                          tempSelectedItem === app.id && 'border-primary'
                         )}
-                        onClick={() => onSelectedItem(app.id)}
+                        onClick={() => setTempSelectedItem(app.id)}
                       >
                         <div className="relative">
                           {/* <img
@@ -235,7 +218,7 @@ export function ModalShareScreen({
                             muted
                             className="w-full h-32 object-cover bg-black"
                           />
-                          {selectedItem === app.id && (
+                          {tempSelectedItem === app.id && (
                             <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                               <Check className="h-4 w-4" />
                             </div>
@@ -266,9 +249,9 @@ export function ModalShareScreen({
                         key={screen.id}
                         className={cn(
                           'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0 rounded-md',
-                          selectedItem === screen.id && 'border-primary'
+                          tempSelectedItem === screen.id && 'border-primary'
                         )}
-                        onClick={() => onSelectedItem(screen.id)}
+                        onClick={() => setTempSelectedItem(screen.id)}
                       >
                         <div className="relative">
                           {/* <img
@@ -284,7 +267,7 @@ export function ModalShareScreen({
                             muted
                             className="w-full h-32 object-cover bg-black"
                           />
-                          {selectedItem === screen.id && (
+                          {tempSelectedItem === screen.id && (
                             <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                               <Check className="h-4 w-4" />
                             </div>
@@ -313,9 +296,9 @@ export function ModalShareScreen({
                     key={device.deviceId}
                     className={cn(
                       'cursor-pointer transition-all hover:border-primary py-0 overflow-hidden gap-0 rounded-md',
-                      selectedItem === device.deviceId && 'border-primary'
+                      tempSelectedItem === device.deviceId && 'border-primary'
                     )}
-                    onClick={() => onSelectedItem(device.deviceId)}
+                    onClick={() => setTempSelectedItem(device.deviceId)}
                   >
                     <div className="relative">
                       <img
@@ -323,7 +306,7 @@ export function ModalShareScreen({
                         alt={device.label}
                         className="w-full h-32 object-cover rounded-t-lg"
                       />
-                      {device.deviceId === selectedItem && (
+                      {device.deviceId === tempSelectedItem && (
                         <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                           <Check className="h-4 w-4" />
                         </div>
@@ -341,7 +324,7 @@ export function ModalShareScreen({
 
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="flex items-center space-x-2">
-            <Switch id="share-audio" checked={shareAudio} onCheckedChange={setShareAudio} />
+            <Switch id="share-audio" checked={tempShareAudio} onCheckedChange={setTempShareAudio} />
             <Label htmlFor="share-audio">Share audio</Label>
           </div>
 
@@ -349,7 +332,12 @@ export function ModalShareScreen({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button disabled={!selectedItem}>Go Live</Button>
+            <Button
+              disabled={!tempSelectedItem}
+              onClick={() => onStartShare(tempSelectedItem!, tempShareAudio)}
+            >
+              Go Live
+            </Button>
           </div>
         </div>
       </DialogContent>

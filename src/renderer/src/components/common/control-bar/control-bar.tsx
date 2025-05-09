@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { cva, VariantProps } from 'class-variance-authority'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,14 +11,18 @@ import {
   Gear,
   PhoneX,
   ChatDots,
+  XCircle
 } from '@phosphor-icons/react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@renderer/lib/utils'
+import { usePersistentUserChoices, useTrackToggle } from '@livekit/components-react'
+import type { CaptureOptionsBySource, ToggleSource } from '@livekit/components-core'
+import { Track } from 'livekit-client'
 
 const controlBarVariants = cva(
-  'absolute w-full bottom-0 flex items-center justify-between px-4 py-2 bg-base-background border-t',
+  'absolute bg-background w-full bottom-0 flex items-center justify-between px-4 py-2 border-t',
   {
     variants: {
       variant: {
@@ -35,7 +39,11 @@ export interface ControlBarProps extends VariantProps<typeof controlBarVariants>
   totalOnline?: number
   onExit?: () => void
   onShareScreenClick?: () => void
+  onShareScreenChange?: (isSharing: boolean) => void
   onSettingClick?: () => void
+  // selectedItem: string | null
+  shareAudio: boolean
+  isOnShareScreen: boolean
 }
 
 const ControlBar = ({ variant, totalOnline, ...props }: ControlBarProps) => {
@@ -74,6 +82,23 @@ const ControlBar = ({ variant, totalOnline, ...props }: ControlBarProps) => {
     // ... add more users as needed
   ]
 
+  const { saveAudioInputEnabled, saveVideoInputEnabled } = usePersistentUserChoices()
+  const microphoneOnChange = React.useCallback(
+    (enabled: boolean, isUserInitiated: boolean) =>
+      isUserInitiated ? saveAudioInputEnabled(enabled) : null,
+    [saveAudioInputEnabled]
+  )
+
+  const cameraOnChange = React.useCallback(
+    (enabled: boolean, isUserInitiated: boolean) =>
+      isUserInitiated ? saveVideoInputEnabled(enabled) : null,
+    [saveVideoInputEnabled]
+  )
+
+  const handleShareScreenClick = useCallback(() => {
+    if (props.onShareScreenClick && !props.isOnShareScreen) props.onShareScreenClick()
+  }, [props])
+
   return (
     <div className={cn(controlBarVariants({ variant }))}>
       <div className="text-sm font-semibold text-muted-foreground w-52 flex h-8 items-center gap-x-2">
@@ -83,19 +108,37 @@ const ControlBar = ({ variant, totalOnline, ...props }: ControlBarProps) => {
       </div>
 
       <div className="flex items-center gap-2 justify-center">
-        <ActionItem active icon={Microphone} deactiveIcon={MicrophoneSlash} tooltip={'Mic'} />
+        <ActionItemToggle
+          onChange={microphoneOnChange}
+          source={Track.Source.Microphone}
+          icon={Microphone}
+          deactiveIcon={MicrophoneSlash}
+          tooltip={'Microphone'}
+          deactiveTitle={'Mute Microphone'}
+        />
         {/* TODO: output always active so it will be removed in production, use setting or mic setting popup for changing the output */}
         {/* <ActionItem icon={Headphones} deactiveIcon={HeadphoneOff} tooltip={t('audio')} /> */}
-        <ActionItem icon={VideoCamera} deactiveIcon={VideoCameraSlash} tooltip={'Camera'} />
-        <ActionItem
-          icon={MonitorArrowUp}
+        <ActionItemToggle
+          onChange={cameraOnChange}
+          source={Track.Source.Camera}
+          icon={VideoCamera}
+          deactiveIcon={VideoCameraSlash}
+          tooltip={'Camera'}
+          deactiveTitle={'Turn off camera'}
+        />
+        {/* TODO: add text on this */}
+        <ActionItemToggle
+          source={Track.Source.ScreenShare}
+          icon={XCircle}
           deactiveIcon={MonitorArrowUp}
-          tooltip={'Share Screen'}
-          onClick={props.onShareScreenClick}
+          tooltip={'Share screen'}
+          deactiveTitle="Stop screen share"
+          onChange={props.isOnShareScreen ? props?.onShareScreenChange : () => { }}
+          onClick={handleShareScreenClick}
         />
         {/* TODO: bellow this can't be active or deactive */}
         {/* TODO: record will have change to other component with timer and end record icon */}
-        <ActionItem icon={Gear} tooltip={'Setting'} onClick={props.onSettingClick}/>
+        <ActionItem icon={Gear} tooltip={'Setting'} onClick={props.onSettingClick} />
         <Button
           onClick={props.onExit}
           variant="destructive"
@@ -145,13 +188,13 @@ export { ControlBar }
 */
 type ActionItemProps = {
   children?: React.ReactNode
-  onClick?: () => void
   suffix?: React.ReactNode
   tooltip?: string
   icon?: Icon
   deactiveIcon?: Icon
   // TODO: handle active toggle
   active?: boolean
+  onClick?: () => void
 }
 // TODO: handle prefix for setting menu dropdown
 const ActionItem = ({ onClick, tooltip, icon, active, deactiveIcon }: ActionItemProps) => {
@@ -162,7 +205,7 @@ const ActionItem = ({ onClick, tooltip, icon, active, deactiveIcon }: ActionItem
         <Button
           variant={active ? 'destructive' : 'outline'}
           size="icon"
-          className="rounded-full"
+          className="rounded-full cursor-pointer"
           onClick={onClick}
         >
           {Icon && <Icon className="h-4 w-4" />}
@@ -176,3 +219,45 @@ const ActionItem = ({ onClick, tooltip, icon, active, deactiveIcon }: ActionItem
 
   return <BasedItem />
 }
+
+interface ActionItemToggleProps<T extends ToggleSource> {
+  source: T
+  captureOptions?: CaptureOptionsBySource<T>
+  onChange?: (enabled: boolean, isUserInitiated: boolean) => void
+  deactiveTitle?: string
+}
+
+function ActionItemToggle<T extends ToggleSource>(
+  props: ActionItemProps & ActionItemToggleProps<T> & React.RefAttributes<HTMLButtonElement>
+) {
+  const { buttonProps, enabled } = useTrackToggle(props)
+  const Icon = useMemo(
+    () => (enabled ? props.icon : props.deactiveIcon),
+    [enabled, props.deactiveIcon, props.icon]
+  )
+  // TODO: clean this up
+  const BasedItem = () => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          {...buttonProps}
+          {...(props.source === Track.Source.ScreenShare
+            ? { variant: 'outline' }
+            : { variant: !enabled ? 'destructive' : 'outline' })}
+          size="icon"
+          className="rounded-full cursor-pointer"
+        >
+          {Icon && <Icon className="h-4 w-4" />}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{enabled ? props.deactiveTitle : props.tooltip}</p>
+      </TooltipContent>
+    </Tooltip>
+  )
+  return <BasedItem />
+}
+
+// const ShareScreenToggle = () =>{
+
+// }

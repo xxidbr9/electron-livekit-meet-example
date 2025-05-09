@@ -35,8 +35,8 @@ const RoomRoute = createRoute({
   // component: () => (
   //   <ExampleMeeting2
   //     codec="h264"
-  //     liveKitUrl={import.meta.env.VITE_LIVEKIT_URL}
-  //     token={import.meta.env.VITE_LIVEKIT_TOKEN}
+  //     // liveKitUrl={import.meta.env.VITE_LIVEKIT_URL}
+  //     // token={import.meta.env.VITE_LIVEKIT_TOKEN}
   //   />
   // )
   // component: ExampleMeeting

@@ -204,7 +204,7 @@ app.whenReady().then(() => {
     if (conferenceWindow) {
       conferenceWindow.show()
     } else {
-      params.roomId = params.roomId || 'globals'
+      params.roomId = params.roomId || 'GLOBALS'
       console.log(params)
       createConferenceWindow({
         roomId: params.roomId,

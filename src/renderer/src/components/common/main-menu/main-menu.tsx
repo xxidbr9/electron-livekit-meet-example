@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Clipboard,
   Copy,
@@ -23,7 +23,8 @@ import {
 } from '@renderer/components/ui/card'
 import { useLocalStorage } from '@renderer/hooks'
 import { Titlebar } from '../titlebar'
-import { initLivekitHealthCheck } from '@renderer/network'
+import { createRoomNetwork, initLivekitHealthCheck } from '@renderer/network'
+import { STORAGE_SERVER_URL, STORAGE_TOKEN } from '@renderer/lib/constants'
 
 export function MainMenu() {
   const [activeTab, setActiveTab] = useState('join')
@@ -31,7 +32,9 @@ export function MainMenu() {
   // const [meetingName, setMeetingName] = useState('')
   const [createCode, setCreateCode] = useState('')
 
-  const [serverUrl] = useLocalStorage('serverUrl', 'localhost:7880')
+  const [serverUrl] = useLocalStorage(STORAGE_SERVER_URL, 'localhost:8080')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, setToken] = useLocalStorage(STORAGE_TOKEN, '')
 
   const generateRandomCode = () => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -90,7 +93,7 @@ export function MainMenu() {
     }
   }, [])
 
-  const handleGoToMeeting = () => {
+  const handleGoToMeeting = useCallback(async () => {
     type ParamsType = {
       roomId: string
       roomName: string
@@ -99,8 +102,23 @@ export function MainMenu() {
       roomId: meetingCode || createCode,
       roomName: meetingCode || createCode
     }
-    window.electron.send('show-conference-window', params)
-  }
+
+    try {
+      // TODO: create pre-join later
+      const res = await createRoomNetwork(
+        {
+          identity: 'NANDO',
+          roomName: meetingCode || 'GLOBALS'
+        },
+        { serverUrl }
+      )
+      setToken(res.data.token)
+      window.electron.send('show-conference-window', params)
+    } catch (err) {
+      alert(err)
+    }
+  }, [createCode, meetingCode, serverUrl, setToken])
+
   return (
     <>
       <Titlebar title onClose={onCloseWindows} onMinimize={onMinimizeWindows} />
