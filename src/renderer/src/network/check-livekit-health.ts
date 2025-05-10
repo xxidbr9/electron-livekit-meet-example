@@ -4,7 +4,6 @@ import { STORAGE_SERVER_URL } from "@renderer/lib/constants"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 let isHealthy: boolean = false
-let pingInterval: NodeJS.Timeout
 let currentServerIP: string = ''
 let loading: boolean = true
 
@@ -41,9 +40,6 @@ export const initLivekitHealthCheck = () => {
   const startHealthCheck = async () => {
     loading = true
     // Clear existing interval if any
-    if (pingInterval) {
-      clearInterval(pingInterval)
-    }
 
     currentServerIP = `http://${currentServerIP}:8080/health`
     // Initial check

@@ -32,7 +32,7 @@ export function MainMenu() {
   // const [meetingName, setMeetingName] = useState('')
   const [createCode, setCreateCode] = useState('')
 
-  const [serverUrl] = useLocalStorage(STORAGE_SERVER_URL, 'localhost:8080')
+  const [serverUrl] = useLocalStorage(STORAGE_SERVER_URL, 'localhost')
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setToken] = useLocalStorage(STORAGE_TOKEN, '')
 

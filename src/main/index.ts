@@ -3,8 +3,15 @@ import { join } from 'path'
 import os from 'os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { openSystemPreferences } from 'electron-util'
 import { fetch } from 'undici'
+
+import { exec } from 'child_process'
+
+function openSystemPreferences(pane: string, section: string) {
+  if (os.platform() === 'darwin') {
+    exec(`open "x-apple.systempreferences:com.apple.preference.${pane}?${section}"`)
+  }
+}
 
 let mainWindow: BrowserWindow | null = null
 function createMainWindow(): void {
@@ -67,7 +74,7 @@ function createSettingMainWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     settingWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '#/settings')
   } else {
-    settingWindow.loadFile(join(__dirname, '../renderer/index.html' + '#/settings'))
+    settingWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/settings' })
   }
 }
 
@@ -100,7 +107,9 @@ function createConferenceWindow({ roomId, roomName }: CreateConferenceWindowPara
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     conferenceWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + `#/room/${roomId}`)
   } else {
-    conferenceWindow.loadFile(join(__dirname, '../renderer/index.html' + `#/room/${roomId}`))
+    conferenceWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+      hash: `/room/${roomId}`
+    })
   }
 }
 
