@@ -33,6 +33,11 @@ jobs:
       with:
         node-version: '18'
 
+    - name: Enable and install pnpm
+      run: |
+        corepack enable
+        corepack prepare pnpm@latest --activate
+
     - name: Install Dependencies
       run: pnpm install
 
