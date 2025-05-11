@@ -1,0 +1,78 @@
+# name: Build and Release
+
+# on:
+#   push:
+#     branches: [ master ]
+
+# jobs:
+#   build:
+#     runs-on: windows-latest
+
+#     steps:
+#     - uses: actions/checkout@v3
+#       with:
+#         submodules: recursive
+
+#     - name: Set up Go
+#       uses: actions/setup-go@v4
+#       with:
+#         go-version: '1.21'
+
+#     - name: Download LiveKit Server
+#       run: |
+#         curl -L -o livekit.zip https://github.com/livekit/livekit/releases/download/v1.8.4/livekit_1.8.4_windows_amd64.zip
+#         copy livekit.zip server\
+
+#     - name: Build Server App
+#       run: |
+#         cd server-app-submodule
+#         go build -o ../server/server-app.exe
+
+#     - name: Setup Node.js
+#       uses: actions/setup-node@v3
+#       with:
+#         node-version: '18'
+
+#     - name: Enable and install pnpm
+#       run: |
+#         corepack enable
+#         corepack prepare pnpm@latest --activate
+
+#     - name: Install Dependencies
+#       run: pnpm install
+
+#     - name: Build Electron App
+#       run: pnpm build:win
+
+#     - name: Create Release Archive
+#       run: |
+#         cd dist
+#         7z a -tzip ../release.zip *-setup.exe
+#         cd ..
+#         7z a release.zip ./server/*
+
+#     - name: Upload Artifact
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: electron-livekit-meet-windows
+#         path: release.zip
+
+#     - name: Create GitHub Release
+#       uses: actions/create-release@v1
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.SECRET_GITHUB_TOKEN }}
+#       with:
+#         tag_name: v1.0.${{ github.run_number }}
+#         release_name: Release v1.0.${{ github.run_number }}
+#         draft: false
+#         prerelease: false
+
+#     - name: Upload Release Asset
+#       uses: actions/upload-release-asset@v1
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.SECRET_GITHUB_TOKEN }}
+#       with:
+#         upload_url: ${{ steps.create_release.outputs.upload_url }}
+#         asset_path: ./release.zip
+#         asset_name: electron-livekit-meet-windows.zip
+#         asset_content_type: application/zip
