@@ -24,6 +24,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@faker-js/faker": "^9.7.0",
     "@livekit/components-core": "^0.12.4",
     "@livekit/components-react": "^2.9.3",
     "@livekit/components-styles": "^1.1.5",
@@ -44,6 +45,7 @@
     "@tanstack/react-router": "^1.120.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "faker": "^6.6.6",
     "livekit-client": "^2.11.4",
     "lucide-react": "^0.508.0",
     "tailwind-merge": "^3.2.0",

@@ -25,6 +25,7 @@ import { useLocalStorage } from '@renderer/hooks'
 import { Titlebar } from '../titlebar'
 import { createRoomNetwork, initLivekitHealthCheck } from '@renderer/network'
 import { STORAGE_SERVER_URL, STORAGE_TOKEN } from '@renderer/lib/constants'
+import { faker } from '@faker-js/faker'
 
 export function MainMenu() {
   const [activeTab, setActiveTab] = useState('join')
@@ -107,7 +108,7 @@ export function MainMenu() {
       // TODO: create pre-join later
       const res = await createRoomNetwork(
         {
-          identity: 'NANDO',
+          identity: faker.name.firstName(),
           roomName: meetingCode || 'GLOBALS'
         },
         { serverUrl }
