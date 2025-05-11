@@ -47,7 +47,7 @@ jobs:
         7z a release.zip ./server/*
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2
       with:
         name: electron-livekit-meet-windows
         path: release.zip
