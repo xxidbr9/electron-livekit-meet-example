@@ -21,7 +21,7 @@ jobs:
     - name: Download LiveKit Server
       run: |
         curl -L -o livekit.zip https://github.com/livekit/livekit/releases/download/v1.8.4/livekit_1.8.4_windows_amd64.zip
-        7z x livekit.zip -o "./server"
+        copy livekit.zip server\
 
     - name: Build Server App
       run: |
