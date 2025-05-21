@@ -12,7 +12,7 @@ An Electron application with React and TypeScript
 ### Room
 ![Room](./.github/assets/room.png)
 ### Share Screen
-![Functional Share Screen](./.github/assets/room.png)
+![Functional Share Screen](./.github/assets/share_screen.png)
 
 ## How to use
 - [Download](#Download) and run all .exe files, make sure you have setup livekit server configuration.
