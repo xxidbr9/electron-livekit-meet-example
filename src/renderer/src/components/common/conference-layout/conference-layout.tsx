@@ -50,7 +50,7 @@ const ConferenceLayout = () => {
       dynacast: true,
       e2ee: undefined
     }
-  }, [])
+  }, [userChoices.audioDeviceId, userChoices.videoDeviceId])
   const room = useMemo(() => new Room(roomOptions), [roomOptions])
 
   const connectOptions = useMemo((): RoomConnectOptions => {
@@ -109,11 +109,11 @@ const ConferenceMainLayout = () => {
       }
       const audioMandatory = shareAudio
         ? ({
-          mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: id
-          }
-        } as unknown as MediaTrackConstraints)
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: id
+            }
+          } as unknown as MediaTrackConstraints)
         : false
 
       const stream = await navigator.mediaDevices.getUserMedia({
