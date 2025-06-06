@@ -14,6 +14,8 @@ import { useLocalStorage } from '@renderer/hooks'
 import { LIVEKIT_PORT } from '@renderer/lib/config'
 import { STORAGE_SERVER_URL, STORAGE_TOKEN } from '@renderer/lib/constants'
 import {
+  AudioPresets,
+  LocalAudioTrack,
   LocalVideoTrack,
   Room,
   RoomConnectOptions,
@@ -108,7 +110,8 @@ const ConferenceMainLayout = () => {
       const audioMandatory = shareAudio
         ? ({
           mandatory: {
-            chromeMediaSource: 'desktop'
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: id
           }
         } as unknown as MediaTrackConstraints)
         : false
@@ -135,9 +138,14 @@ const ConferenceMainLayout = () => {
         }
       })
       if (shareAudio) {
-        await room.localParticipant.publishTrack(track, {
-          source: Track.Source.ScreenShareAudio
+        const audioStream = stream.getAudioTracks()[0]
+        const localAudioTrack = new LocalAudioTrack(audioStream)
+        const respAudio = await room.localParticipant.publishTrack(localAudioTrack, {
+          source: Track.Source.ScreenShareAudio,
+          simulcast: false,
+          ...AudioPresets.musicHighQualityStereo
         })
+        console.log('here audio', respAudio)
       }
       if (respVideo.trackSid) setIsScreenShareEnabled(true)
     },
@@ -152,10 +160,7 @@ const ConferenceMainLayout = () => {
   const participants = useParticipants()
 
   return (
-    <main
-      data-lk-theme="default"
-      className="dark bg-background text-foreground"
-    >
+    <main data-lk-theme="default" className="dark bg-background text-foreground">
       <Titlebar
         onClose={onCloseWindows}
         onMinimize={onMinimizeWindows}

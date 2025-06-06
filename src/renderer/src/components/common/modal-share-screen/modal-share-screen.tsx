@@ -71,7 +71,6 @@ export function ModalShareScreen({
             apps.push(newSource)
           }
         })
-        console.log(sources)
 
         setScreens(screens)
         setApplications(apps)
@@ -88,9 +87,10 @@ export function ModalShareScreen({
     setDevices(videoDevices)
   }
   useEffect(() => {
+    if (!open) return
     getDisplayMedia()
     getCapturerDevice()
-  }, [])
+  }, [open])
 
   const [tabNow, setTabNow] = useState<'applications' | 'screens' | 'capture' | string>(
     'applications'
