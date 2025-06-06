@@ -88,8 +88,21 @@ export function ModalShareScreen({
   }
   useEffect(() => {
     if (!open) return
-    getDisplayMedia()
-    getCapturerDevice()
+    const loadDisplayMedia = async () => {
+      try {
+        await getDisplayMedia()
+        await getCapturerDevice()
+      } catch (err) {
+        console.error('Failed to get display media', err)
+      }
+    }
+    loadDisplayMedia()
+    const interval = setInterval(() => {
+      loadDisplayMedia()
+    }, 1000)
+    return () => {
+      clearInterval(interval)
+    }
   }, [open])
 
   const [tabNow, setTabNow] = useState<'applications' | 'screens' | 'capture' | string>(
